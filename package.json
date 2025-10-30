@@ -1,0 +1,66 @@
+{
+  "name": "bpsr-meter-wahf-edition",
+  "version": "1.0.0",
+  "description": "BPSR Meter: WAHF Edition",
+  "main": "electron-main.js",
+  "bin": {
+    "bpsr-meter": "server.js"
+  },
+  "engines": {
+    "node": "^22.15.0"
+  },
+  "author": "WAHF",
+  "license": "AGPL-3.0",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "cap": "^0.2.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "google-protobuf": "^4.0.0",
+    "long": "^5.3.2",
+    "protobufjs": "^7.5.4",
+    "socket.io": "^4.8.1",
+    "winston": "^3.17.0"
+  },
+  "pkg": {
+    "scripts": "server.js",
+    "assets": [
+      "public/**/*",
+      "tables/**/*",
+      "diccionario.json",
+      "ip.txt",
+      "player_map.json",
+      "settings.json",
+      "users.json",
+      "node_modules/cap/**/*"
+    ],
+    "targets": [
+      "node22-win-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "build": {
+    "appId": "com.wahf.bpsr-meter",
+    "productName": "BPSR Meter - WAHF Edition",
+    "copyright": "Copyright © 2025 WAHF",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BPSR Meter - WAHF Edition"
+    }
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12"
+  }
+}
