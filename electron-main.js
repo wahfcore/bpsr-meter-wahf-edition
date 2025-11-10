@@ -175,11 +175,21 @@ logToFile('==== ELECTRON START ====');
 
         serverProcess.stdout.on('data', (data) => {
             logToFile('SERVER STDOUT: ' + data.toString().trim());
-            // Buscar la URL del servidor en la salida del servidor
+            
+            // Try to match the server startup message
             const match = data.toString().match(/Servidor web iniciado en (http:\/\/localhost:\d+)/);
             if (match && match[1]) {
                 const serverUrl = match[1];
                 logToFile('Server started successfully. Loading URL: ' + serverUrl + '/index.html');
+                mainWindow.loadURL(`${serverUrl}/index.html`);
+                serverLoaded = true;
+                clearTimeout(serverTimeout);
+            }
+            
+            // Fallback: if we see "WebSocket server started", assume server is up
+            if (data.toString().includes('WebSocket server started') && !serverLoaded) {
+                const serverUrl = `http://localhost:${server_port}`;
+                logToFile('Server detected via WebSocket message. Loading URL: ' + serverUrl + '/index.html');
                 mainWindow.loadURL(`${serverUrl}/index.html`);
                 serverLoaded = true;
                 clearTimeout(serverTimeout);

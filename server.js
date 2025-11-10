@@ -93,8 +93,9 @@ async function main() {
         await sniffer.start(deviceNum, PacketProcessor);
     } catch (error) {
         logger.error(`Error starting sniffer: ${error.message}`);
-        rl.close();
-        process.exit(1);
+        logger.warn('Sniffer failed to start - the meter will run but won\'t capture packets.');
+        logger.warn('Make sure Npcap is installed with WinPcap compatibility mode.');
+        // Don't exit - allow the web server to start anyway
     }
 
     logger.level = 'error';
