@@ -46,6 +46,13 @@
     "appId": "com.wahf.bpsr-meter",
     "productName": "BPSR Meter - WAHF Edition",
     "copyright": "Copyright © 2025 WAHF",
+    "asar": {
+      "smartUnpack": false,
+      "ordering": null
+    },
+    "asarUnpack": [
+      "node_modules/cap/**/*"
+    ],
     "win": {
       "target": "nsis",
       "icon": "icon.ico",
