@@ -112,8 +112,8 @@ logToFile('==== ELECTRON START ====');
         const primaryDisplay = screen.getPrimaryDisplay();
         const { width: screenWidth } = primaryDisplay.bounds; // Use full screen bounds
         
-        const windowWidth = 650;
-        const windowHeight = 600;
+        const windowWidth = 720;
+        const windowHeight = 700;
         
         // Position window at right edge with transform-origin: top right
         // The content scales from the right, so position the window's right edge at screen edge

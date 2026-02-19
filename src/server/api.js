@@ -67,6 +67,20 @@ function initializeApi(app, server, io, userDataManager, logger, globalSettings)
         res.json(data);
     });
 
+    // Encounter history endpoints
+    app.get('/api/encounters', (req, res) => {
+        res.json({ code: 0, encounters: userDataManager.getEncounterList() });
+    });
+
+    app.get('/api/encounters/:id', (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const encounter = userDataManager.getEncounterById(id);
+        if (!encounter) {
+            return res.status(404).json({ code: 1, msg: 'Encounter not found' });
+        }
+        res.json({ code: 0, encounter });
+    });
+
     app.get('/api/clear', (req, res) => {
         userDataManager.clearAll(globalSettings); // Pasar globalSettings
         console.log('Statistics cleared!');
@@ -77,6 +91,8 @@ function initializeApi(app, server, io, userDataManager, logger, globalSettings)
     });
 
     app.get('/api/reset', (req, res) => {
+        // Snapshot before resetting so the encounter is preserved
+        userDataManager.snapshotEncounter();
         userDataManager.resetStatistics();
         console.log('Statistics reset (keeping player info)!');
         res.json({

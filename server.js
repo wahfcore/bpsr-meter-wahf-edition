@@ -22,7 +22,8 @@ let globalSettings = {
     enableFightLog: false,
     enableDpsLog: false,
     enableHistorySave: false,
-    isPaused: false, // Añadir estado de pausa global
+    isPaused: false,
+    autoSnapshotLog: false,
 };
 
 let server_port;
@@ -115,6 +116,7 @@ async function main() {
     setInterval(() => {
         if (!globalSettings.isPaused) {
             userDataManager.updateAllRealtimeDps();
+            userDataManager.checkBossDeath();
         }
     }, 100);
 

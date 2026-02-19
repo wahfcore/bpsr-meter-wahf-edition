@@ -420,6 +420,16 @@ class UserDataManager {
 
         // UID del jugador local (tu personaje)
         this.localPlayerUid = null;
+
+        // Encounter history (in-memory ring buffer)
+        this.encounterHistory = [];
+        this.encounterIdCounter = 0;
+        this.MAX_ENCOUNTERS = 20;
+
+        // Boss death detection
+        this.activeBossUid = null;
+        this.activeBossHpPrev = null;
+        this.activeBossName = null;
     }
 
     setLocalPlayerUid(uid) {
@@ -755,6 +765,184 @@ class UserDataManager {
             this.clearAll();
             this.logger.info('Timeout reached, statistics cleared!');
         }
+    }
+
+    // ==================== Encounter History ====================
+
+    /** Derive a label from the current enemy cache (boss = highest max_hp) */
+    _getBossLabel() {
+        let bossName = null;
+        let highestMaxHp = 0;
+        for (const [id, maxHp] of this.enemyCache.maxHp) {
+            if (maxHp > highestMaxHp) {
+                highestMaxHp = maxHp;
+                bossName = this.enemyCache.name.get(id) || null;
+            }
+        }
+        return bossName;
+    }
+
+    /** Build a ranked snapshot of all current user data */
+    _buildSnapshot() {
+        const allData = this.getAllUsersData();
+        // Sort by total damage descending for ranking
+        const sorted = Object.entries(allData)
+            .map(([uid, d]) => ({ uid, ...d }))
+            .sort((a, b) => ((b.total_damage?.total || 0) - (a.total_damage?.total || 0)));
+
+        const players = sorted.map((p, i) => ({
+            rank: i + 1,
+            name: p.name,
+            profession: p.profession,
+            totalDamage: p.total_damage?.total || 0,
+            dps: p.total_dps || 0,
+            totalHealing: p.total_healing?.total || 0,
+            hps: p.total_hps || 0,
+            damageTaken: p.taken_damage || 0,
+            deadCount: p.dead_count || 0,
+        }));
+
+        return { userData: allData, players };
+    }
+
+    /** Snapshot the current encounter into history (called before reset) */
+    snapshotEncounter(label) {
+        // Only snapshot if there is meaningful data
+        const hasData = Array.from(this.users.values()).some(u =>
+            (u.damageStats.stats.total > 0) || (u.healingStats.stats.total > 0)
+        );
+        if (!hasData) return null;
+
+        const bossLabel = label || this._getBossLabel() || `Encounter #${this.encounterIdCounter + 1}`;
+        const { userData, players } = this._buildSnapshot();
+
+        const encounter = {
+            id: this.encounterIdCounter++,
+            label: bossLabel,
+            timestamp: Date.now(),
+            startTime: this.startTime,
+            duration: Date.now() - this.startTime,
+            userData,
+            players,
+        };
+
+        this.encounterHistory.push(encounter);
+        if (this.encounterHistory.length > this.MAX_ENCOUNTERS) {
+            this.encounterHistory.shift();
+        }
+
+        return encounter;
+    }
+
+    /** Get list of encounter summaries (for the dropdown) */
+    getEncounterList() {
+        return this.encounterHistory.map(e => ({
+            id: e.id,
+            label: e.label,
+            timestamp: e.timestamp,
+            duration: e.duration,
+            playerCount: e.players.length,
+        }));
+    }
+
+    /** Get full encounter data by id */
+    getEncounterById(id) {
+        return this.encounterHistory.find(e => e.id === id) || null;
+    }
+
+    // ==================== Boss Death Detection ====================
+
+    /** Called periodically to detect boss death and auto-snapshot */
+    checkBossDeath() {
+        // Find the current "boss" — enemy with highest max_hp
+        let bossUid = null;
+        let bossMaxHp = 0;
+        for (const [uid, maxHp] of this.enemyCache.maxHp) {
+            if (maxHp > bossMaxHp) {
+                bossMaxHp = maxHp;
+                bossUid = uid;
+            }
+        }
+
+        if (bossUid === null) {
+            // No enemies — if we were tracking a boss, it disappeared
+            if (this.activeBossUid !== null && this.activeBossHpPrev !== null && this.activeBossHpPrev > 0) {
+                // Boss vanished after being damaged — treat as death
+                this._onBossDeath();
+            }
+            this.activeBossUid = null;
+            this.activeBossHpPrev = null;
+            this.activeBossName = null;
+            return;
+        }
+
+        const currentHp = this.enemyCache.hp.get(bossUid) ?? bossMaxHp;
+
+        // If boss changed, update tracking
+        if (bossUid !== this.activeBossUid) {
+            this.activeBossUid = bossUid;
+            this.activeBossHpPrev = currentHp;
+            this.activeBossName = this.enemyCache.name.get(bossUid) || null;
+            return;
+        }
+
+        // Check for HP dropping to 0
+        if (this.activeBossHpPrev > 0 && currentHp <= 0) {
+            this._onBossDeath();
+        }
+
+        this.activeBossHpPrev = currentHp;
+    }
+
+    /** Internal: called when a boss death is detected */
+    async _onBossDeath() {
+        const bossName = this.activeBossName || this._getBossLabel() || 'Unknown Boss';
+        this.logger.info(`Boss death detected: ${bossName}`);
+
+        // Always push to in-memory encounter history
+        const encounter = this.snapshotEncounter(bossName);
+
+        // Only write to disk if auto-snapshot logging is enabled
+        if (encounter && this.globalSettings.autoSnapshotLog) {
+            await this._saveSnapshotToDisk(encounter);
+        }
+
+        // Reset boss tracking
+        this.activeBossUid = null;
+        this.activeBossHpPrev = null;
+        this.activeBossName = null;
+    }
+
+    /** Write a snapshot JSON log to logs/snapshots/ */
+    async _saveSnapshotToDisk(encounter) {
+        try {
+            const snapshotDir = path.join('.', 'logs', 'snapshots');
+            await fsPromises.mkdir(snapshotDir, { recursive: true });
+
+            const filename = `${encounter.timestamp}_${encounter.label.replace(/[^a-zA-Z0-9_\-]/g, '_')}.json`;
+            const filePath = path.join(snapshotDir, filename);
+
+            const logData = {
+                boss: encounter.label,
+                timestamp: new Date(encounter.timestamp).toISOString(),
+                startTime: new Date(encounter.startTime).toISOString(),
+                durationMs: encounter.duration,
+                durationFormatted: this._formatDuration(encounter.duration),
+                players: encounter.players,
+            };
+
+            await fsPromises.writeFile(filePath, JSON.stringify(logData, null, 2), 'utf8');
+            this.logger.info(`Snapshot log saved: ${filePath}`);
+        } catch (error) {
+            this.logger.error('Failed to save snapshot log:', error);
+        }
+    }
+
+    _formatDuration(ms) {
+        const totalSec = Math.floor(ms / 1000);
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        return `${min}m ${sec}s`;
     }
 }
 

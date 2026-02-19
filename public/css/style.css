@@ -1,13 +1,15 @@
 :root {
-    --bg-dark: rgba(15, 20, 30, 0.42);
-    --bg-darker: rgba(10, 15, 22, 0.45);
-    --bg-light: rgba(25, 32, 45, 0.38);
-    --accent-primary: #00B7C3;
+    --bg-dark: rgba(22, 22, 26, 0.85);
+    --bg-darker: rgba(18, 18, 22, 0.90);
+    --bg-light: rgba(32, 32, 38, 0.80);
+    --accent-primary: #7C8DA5;
+    --accent-secondary: #5A6A7E;
+    --accent-active: #8FA3BD;
     --text-primary: #ffffff;
-    --text-secondary: #b4bcc9;
-    --text-muted: #6c7a89;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(0, 183, 195, 0.3);
+    --text-secondary: #9DA5B0;
+    --text-muted: #5E6670;
+    --border: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(124, 141, 165, 0.25);
     --gap-xs: 2px;
     --gap-sm: 4px;
     --gap-md: 6px;
@@ -42,8 +44,7 @@ body {
     height: fit-content;
     min-width: 0;
     min-height: 0;
-    background: var(--bg-dark);
-    backdrop-filter: blur(8px);
+    background: transparent;
     padding: 1px;
     display: flex;
     flex-direction: column;
@@ -53,11 +54,11 @@ body {
     position: absolute;
     top: 0;
     right: 0;
-    transform: scale(0.7);
+    transform: scale(1.0);
     transform-origin: top right;
 }
 
-
+/* ===== Toolbar ===== */
 .controls {
     display: flex;
     align-items: center;
@@ -66,6 +67,7 @@ body {
     background: var(--bg-darker);
     border-radius: var(--radius);
     border: 1px solid var(--border);
+    backdrop-filter: blur(4px);
     pointer-events: all;
 }
 
@@ -91,7 +93,7 @@ body {
     border-color: var(--accent-primary);
 }
 
-/* Botones de ordenamiento */
+/* Sort buttons */
 .sort-button {
     padding: 4px 12px;
     background: rgba(255, 255, 255, 0.05);
@@ -108,7 +110,7 @@ body {
 }
 
 .sort-button:hover {
-    background: rgba(0, 183, 195, 0.15);
+    background: rgba(124, 141, 165, 0.15);
     color: var(--accent-primary);
     border-color: var(--border-hover);
 }
@@ -117,10 +119,9 @@ body {
     background: var(--accent-primary);
     color: var(--text-primary);
     border-color: var(--accent-primary);
-    box-shadow: 0 0 8px rgba(0, 183, 195, 0.3);
 }
 
-/* Estados del candado */
+/* Lock states */
 .dps-meter.locked .close-button {
     opacity: 0.3;
     cursor: not-allowed;
@@ -136,7 +137,7 @@ body {
 }
 
 .advanced-lite-btn.group {
-    background: rgba(0, 183, 195, 0.2);
+    background: rgba(124, 141, 165, 0.2);
     color: var(--accent-primary);
     border-color: var(--accent-primary);
 }
@@ -185,11 +186,120 @@ body {
     transform: rotate(180deg);
 }
 
-.sync-button:hover .sync-icon {
+/* ===== Encounter Dropdown ===== */
+.encounter-select {
+    height: 24px;
+    max-width: 120px;
+    padding: 0 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 600;
+    font-family: Inter, sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+    outline: none;
+    transition: all var(--transition);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.encounter-select:hover,
+.encounter-select:focus {
+    border-color: var(--border-hover);
     color: var(--text-primary);
 }
 
+.encounter-select option {
+    background: #1a1a1e;
+    color: var(--text-primary);
+}
 
+/* ===== Snapshot Toggle ===== */
+.snapshot-toggle {
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    font-size: 10px;
+    pointer-events: auto;
+}
+
+.snapshot-toggle:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+.snapshot-toggle.active {
+    background: rgba(124, 141, 165, 0.25);
+    color: var(--accent-active);
+    border-color: var(--accent-primary);
+}
+
+/* ===== Boss HP Bar ===== */
+#boss-hp-container {
+    display: none;
+    margin-top: 4px;
+    padding: var(--gap-sm);
+    background: rgba(22, 22, 26, 0.55);
+    backdrop-filter: blur(3px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    pointer-events: none;
+}
+
+#boss-hp-container.visible {
+    display: block;
+}
+
+.boss-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.boss-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.boss-hp-text {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.boss-bar {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.boss-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    transition: width 0.3s ease, background 0.3s ease;
+    border-radius: 2px;
+}
+
+/* ===== Loading ===== */
 #loading-indicator {
     text-align: center;
     padding: var(--gap-sm);
@@ -198,15 +308,18 @@ body {
     transform: translateY(-2px);
 }
 
+/* ===== Player Bars (floating) ===== */
 #player-bars-container {
     display: flex;
     flex-direction: column;
     gap: var(--gap-xs);
+    margin-top: 4px;
     pointer-events: none;
 }
 
 .player-bar {
-    background: var(--bg-light);
+    background: rgba(22, 22, 26, 0.45);
+    backdrop-filter: blur(3px);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: var(--gap-xs);
@@ -219,7 +332,7 @@ body {
 
 .player-bar:hover {
     border-color: var(--border-hover);
-    background: rgba(25, 32, 45, 0.50);
+    background: rgba(32, 32, 38, 0.60);
     transform: translateX(2px);
 }
 
@@ -256,63 +369,51 @@ body {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Top 1 - Oro */
+/* Rank badges - matte, no glow */
 .player-position.rank-1 {
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    border-color: #ffa500;
+    background: linear-gradient(135deg, #d4a830 0%, #e6c24c 100%);
+    border-color: #b8922a;
     color: #1a1a1a;
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Top 2 - Plata */
 .player-position.rank-2 {
-    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
-    border-color: #a8a8a8;
+    background: linear-gradient(135deg, #a0a0a0 0%, #c8c8c8 100%);
+    border-color: #888888;
     color: #1a1a1a;
-    box-shadow: 0 0 10px rgba(192, 192, 192, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Top 3 - Bronce */
 .player-position.rank-3 {
-    background: linear-gradient(135deg, #cd7f32 0%, #e89b5e 100%);
-    border-color: #b87333;
+    background: linear-gradient(135deg, #b07030 0%, #c89058 100%);
+    border-color: #966030;
     color: #1a1a1a;
-    box-shadow: 0 0 10px rgba(205, 127, 50, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Jugador local - Cyan (solo cuando NO está en top 3) */
+/* Local player */
 .player-position.local-player {
-    background: linear-gradient(135deg, #00B7C3 0%, #00D9E6 100%);
-    border-color: #009DA8;
+    background: linear-gradient(135deg, #6880A0 0%, #7C94B4 100%);
+    border-color: var(--accent-secondary);
     color: #ffffff;
-    box-shadow: 0 0 12px rgba(0, 183, 195, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Jugador local en Top 1 - Oro con borde cyan brillante */
+/* Local player in rank slots */
 .player-position.rank-1.local-player {
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    border: 2px solid #00B7C3;
+    background: linear-gradient(135deg, #d4a830 0%, #e6c24c 100%);
+    border: 2px solid var(--accent-primary);
     color: #1a1a1a;
-    box-shadow: 0 0 16px rgba(0, 183, 195, 0.8), 0 0 8px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Jugador local en Top 2 - Plata con borde cyan brillante */
 .player-position.rank-2.local-player {
-    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
-    border: 2px solid #00B7C3;
+    background: linear-gradient(135deg, #a0a0a0 0%, #c8c8c8 100%);
+    border: 2px solid var(--accent-primary);
     color: #1a1a1a;
-    box-shadow: 0 0 16px rgba(0, 183, 195, 0.8), 0 0 8px rgba(192, 192, 192, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Jugador local en Top 3 - Bronce con borde cyan brillante */
 .player-position.rank-3.local-player {
-    background: linear-gradient(135deg, #cd7f32 0%, #e89b5e 100%);
-    border: 2px solid #00B7C3;
+    background: linear-gradient(135deg, #b07030 0%, #c89058 100%);
+    border: 2px solid var(--accent-primary);
     color: #1a1a1a;
-    box-shadow: 0 0 16px rgba(0, 183, 195, 0.8), 0 0 8px rgba(205, 127, 50, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .class-icon {
@@ -358,7 +459,6 @@ body {
     height: 100%;
     transition: width 0.3s ease, background 0.3s ease;
     border-radius: 2px;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
 }
 
 .hp-text {
@@ -369,7 +469,7 @@ body {
     font-size: 9px;
     font-weight: 700;
     color: var(--text-primary);
-    text-shadow: 
+    text-shadow:
         0 0 4px rgba(0, 0, 0, 1),
         0 1px 3px rgba(0, 0, 0, 1),
         1px 1px 2px rgba(0, 0, 0, 0.8);
@@ -466,12 +566,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(0, 183, 195, 0.3);
+    background: rgba(124, 141, 165, 0.3);
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 183, 195, 0.5);
+    background: rgba(124, 141, 165, 0.5);
 }
 
 @media (max-width: 768px) {
