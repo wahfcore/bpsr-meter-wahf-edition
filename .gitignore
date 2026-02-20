@@ -6,3 +6,4 @@ dist/builder-effective-config.yaml
 Thumbs.db
 
 dist/*.zip
+build-output/

@@ -359,6 +359,20 @@ class PacketProcessor {
                             hpLessenValue.toNumber(),
                             targetUuid.toNumber(),
                         );
+
+                        // Track current target (local player's most recent hit)
+                        if (attackerUuid.toNumber() === this.userDataManager.localPlayerUid) {
+                            this.userDataManager.setCurrentTarget(targetUuid.toNumber());
+                        }
+                    }
+
+                    // Track ALL damage to monsters for HP estimation
+                    if (isTargetMonster) {
+                        this.userDataManager.updateEnemyFromDamage(
+                            targetUuid.toNumber(),
+                            hpLessenValue.toNumber(),
+                            isDead
+                        );
                     }
                 }
             }
@@ -655,10 +669,16 @@ class PacketProcessor {
                     break;
                 case AttrType.AttrHp:
                     const enemyHp = reader.int32();
+                    this.logger.info(`Enemy E${enemyUid} AttrHp=${enemyHp}`);
                     this.userDataManager.enemyCache.hp.set(enemyUid, enemyHp);
+                    // If we haven't seen MaxHp yet, use first Hp as MaxHp estimate
+                    if (!this.userDataManager.enemyCache.maxHp.has(enemyUid) && enemyHp > 0) {
+                        this.userDataManager.enemyCache.maxHp.set(enemyUid, enemyHp);
+                    }
                     break;
                 case AttrType.AttrMaxHp:
                     const enemyMaxHp = reader.int32();
+                    this.logger.info(`Enemy E${enemyUid} AttrMaxHp=${enemyMaxHp}`);
                     this.userDataManager.enemyCache.maxHp.set(enemyUid, enemyMaxHp);
                     break;
                 default:

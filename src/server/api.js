@@ -63,6 +63,7 @@ function initializeApi(app, server, io, userDataManager, logger, globalSettings)
         const data = {
             code: 0,
             enemy: enemiesData,
+            currentTarget: userDataManager.currentTargetUid,
         };
         res.json(data);
     });

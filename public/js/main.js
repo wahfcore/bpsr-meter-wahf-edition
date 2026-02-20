@@ -379,7 +379,6 @@ async function refreshEncounterList() {
 // ===== Boss HP =====
 async function updateBossHp() {
     if (selectedEncounterId !== 'live') {
-        // Hide boss HP when viewing history
         if (bossHpContainer) bossHpContainer.classList.remove('visible');
         return;
     }
@@ -388,41 +387,57 @@ async function updateBossHp() {
         const res = await fetch('/api/enemies');
         const data = await res.json();
         const enemies = data.enemy || {};
+        const currentTarget = data.currentTarget;
 
-        // Find boss (highest max_hp)
-        let bossId = null;
-        let bossMaxHp = 0;
-        for (const [id, enemy] of Object.entries(enemies)) {
-            const maxHp = enemy.max_hp || 0;
-            if (maxHp > bossMaxHp) {
-                bossMaxHp = maxHp;
-                bossId = id;
+        // 1. Prefer current target (mob the player is actively hitting)
+        let targetId = null;
+        let targetMaxHp = 0;
+
+        if (currentTarget && enemies[currentTarget] && !enemies[currentTarget].is_dead) {
+            const ct = enemies[currentTarget];
+            if (ct.max_hp > 0) {
+                targetId = String(currentTarget);
+                targetMaxHp = ct.max_hp;
+            } else if (ct.total_damage_taken > 0) {
+                // No attribute HP data — show name + damage dealt
+                if (bossHpContainer) bossHpContainer.classList.add('visible');
+                if (bossNameEl) bossNameEl.textContent = ct.name || 'Unknown';
+                if (bossHpTextEl) bossHpTextEl.textContent = `${formatStat(ct.total_damage_taken)} damage dealt`;
+                if (bossBarFill) {
+                    bossBarFill.style.width = '100%';
+                    bossBarFill.style.background = '#4a5568';
+                }
+                return;
             }
         }
 
-        if (!bossId || bossMaxHp <= 0) {
+        // 2. Fall back to highest max_hp living enemy
+        if (!targetId) {
+            for (const [id, enemy] of Object.entries(enemies)) {
+                const maxHp = enemy.max_hp || 0;
+                if (maxHp > targetMaxHp && !enemy.is_dead) {
+                    targetMaxHp = maxHp;
+                    targetId = id;
+                }
+            }
+        }
+
+        if (!targetId || targetMaxHp <= 0) {
             if (bossHpContainer) bossHpContainer.classList.remove('visible');
             return;
         }
 
-        const boss = enemies[bossId];
-        const hp = boss.hp ?? bossMaxHp;
-        const hpPercent = Math.max(0, Math.min(100, (hp / bossMaxHp) * 100));
+        // 3. Show HP bar for selected target
+        const target = enemies[targetId];
+        const hp = target.hp ?? targetMaxHp;
+        const hpPercent = Math.max(0, Math.min(100, (hp / targetMaxHp) * 100));
 
-        // Hide if boss is dead or at full HP (not in combat)
-        if (hp <= 0 || hp >= bossMaxHp) {
-            if (bossHpContainer) bossHpContainer.classList.remove('visible');
-            return;
-        }
-
-        // Show boss HP bar
         if (bossHpContainer) bossHpContainer.classList.add('visible');
-        if (bossNameEl) bossNameEl.textContent = boss.name || 'Unknown Boss';
-        if (bossHpTextEl) bossHpTextEl.textContent = `${formatStat(hp)} / ${formatStat(bossMaxHp)} (${hpPercent.toFixed(1)}%)`;
+        if (bossNameEl) bossNameEl.textContent = target.name || 'Unknown';
+        if (bossHpTextEl) bossHpTextEl.textContent = `${formatStat(hp)} / ${formatStat(targetMaxHp)} (${hpPercent.toFixed(1)}%)`;
         if (bossBarFill) {
             bossBarFill.style.width = `${hpPercent}%`;
-            // Color: green > 50%, orange > 25%, red <= 25%
-            const color = hpPercent > 50 ? '#4a8c5c' : hpPercent > 25 ? '#b8862d' : '#a83e3e';
+            const color = hp <= 0 ? '#333' : hpPercent > 50 ? '#4a8c5c' : hpPercent > 25 ? '#b8862d' : '#a83e3e';
             bossBarFill.style.background = color;
         }
     } catch (err) {

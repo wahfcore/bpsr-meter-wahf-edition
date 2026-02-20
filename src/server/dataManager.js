@@ -416,7 +416,13 @@ class UserDataManager {
             name: new Map(),
             hp: new Map(),
             maxHp: new Map(),
+            totalDamageTaken: new Map(),
+            dead: new Set(),
         };
+
+        // Current target (last enemy hit by local player)
+        this.currentTargetUid = null;
+        this.currentTargetTime = null;
 
         // UID del jugador local (tu personaje)
         this.localPlayerUid = null;
@@ -435,7 +441,32 @@ class UserDataManager {
     setLocalPlayerUid(uid) {
         if (this.localPlayerUid !== uid) {
             this.localPlayerUid = uid;
-            // console.log(`🎮 Local player UID set: ${uid}`);
+        }
+    }
+
+    /** Set the current target (most recently attacked enemy by local player) */
+    setCurrentTarget(uid) {
+        this.currentTargetUid = uid;
+        this.currentTargetTime = Date.now();
+    }
+
+    /** Track HP changes from damage events (works even without attribute data) */
+    updateEnemyFromDamage(uid, hpLessen, isDead) {
+        if (hpLessen > 0) {
+            const prev = this.enemyCache.totalDamageTaken.get(uid) || 0;
+            this.enemyCache.totalDamageTaken.set(uid, prev + hpLessen);
+        }
+
+        if (isDead) {
+            this.enemyCache.hp.set(uid, 0);
+            this.enemyCache.dead.add(uid);
+            // Learn maxHp from total damage dealt if not known from attributes
+            if (!this.enemyCache.maxHp.has(uid)) {
+                const totalDmg = this.enemyCache.totalDamageTaken.get(uid) || 0;
+                if (totalDmg > 0) {
+                    this.enemyCache.maxHp.set(uid, totalDmg);
+                }
+            }
         }
     }
 
@@ -653,12 +684,19 @@ class UserDataManager {
     /** Obtener todos los datos de caché de enemigos */
     getAllEnemiesData() {
         const result = {};
-        const enemyIds = new Set([...this.enemyCache.name.keys(), ...this.enemyCache.hp.keys(), ...this.enemyCache.maxHp.keys()]);
+        const enemyIds = new Set([
+            ...this.enemyCache.name.keys(),
+            ...this.enemyCache.hp.keys(),
+            ...this.enemyCache.maxHp.keys(),
+            ...this.enemyCache.totalDamageTaken.keys(),
+        ]);
         enemyIds.forEach((id) => {
             result[id] = {
                 name: this.enemyCache.name.get(id),
                 hp: this.enemyCache.hp.get(id),
                 max_hp: this.enemyCache.maxHp.get(id),
+                total_damage_taken: this.enemyCache.totalDamageTaken.get(id) || 0,
+                is_dead: this.enemyCache.dead.has(id),
             };
         });
         return result;
@@ -669,6 +707,8 @@ class UserDataManager {
         this.enemyCache.name.clear();
         this.enemyCache.hp.clear();
         this.enemyCache.maxHp.clear();
+        this.enemyCache.totalDamageTaken.clear();
+        this.enemyCache.dead.clear();
     }
 
     /** Called when the player changes zones (local player appears in SyncNearEntities) */
@@ -680,10 +720,12 @@ class UserDataManager {
         this.clearAll();
         // Clear enemy cache (fixes stuck boss HP bar)
         this.refreshEnemyCache();
-        // Reset boss tracking
+        // Reset boss and target tracking
         this.activeBossUid = null;
         this.activeBossHpPrev = null;
         this.activeBossName = null;
+        this.currentTargetUid = null;
+        this.currentTargetTime = null;
     }
 
     /** Limpiar todos los datos de usuario */
