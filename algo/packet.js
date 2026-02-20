@@ -687,6 +687,16 @@ class PacketProcessor {
             this.userDataManager.setLocalPlayerUid(localPlayerUid);
         }
 
+        // Detect zone change: local player character appearing means scene load
+        for (const entity of syncNearEntities.Appear) {
+            if (!entity.Uuid) continue;
+            const uid = entity.Uuid.shiftRight(16).toNumber();
+            if (entity.EntType === pb.EEntityType.EntChar && uid === localPlayerUid && localPlayerUid > 0) {
+                this.userDataManager.onZoneChange();
+                break;
+            }
+        }
+
         for (const entity of syncNearEntities.Appear) {
             const entityUuid = entity.Uuid;
             if (!entityUuid) continue;

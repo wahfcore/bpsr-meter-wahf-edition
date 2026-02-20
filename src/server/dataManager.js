@@ -671,6 +671,21 @@ class UserDataManager {
         this.enemyCache.maxHp.clear();
     }
 
+    /** Called when the player changes zones (local player appears in SyncNearEntities) */
+    onZoneChange() {
+        this.logger.info('Zone change detected — snapshotting and resetting.');
+        // Snapshot current encounter if there's meaningful data
+        this.snapshotEncounter();
+        // Clear all user data and stats
+        this.clearAll();
+        // Clear enemy cache (fixes stuck boss HP bar)
+        this.refreshEnemyCache();
+        // Reset boss tracking
+        this.activeBossUid = null;
+        this.activeBossHpPrev = null;
+        this.activeBossName = null;
+    }
+
     /** Limpiar todos los datos de usuario */
     clearAll() {
         this.users = new Map();
@@ -907,10 +922,11 @@ class UserDataManager {
             await this._saveSnapshotToDisk(encounter);
         }
 
-        // Reset boss tracking
+        // Reset boss tracking and clear enemy cache so HP bar hides
         this.activeBossUid = null;
         this.activeBossHpPrev = null;
         this.activeBossName = null;
+        this.refreshEnemyCache();
     }
 
     /** Write a snapshot JSON log to logs/snapshots/ */

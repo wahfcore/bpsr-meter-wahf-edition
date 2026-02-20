@@ -409,8 +409,8 @@ async function updateBossHp() {
         const hp = boss.hp ?? bossMaxHp;
         const hpPercent = Math.max(0, Math.min(100, (hp / bossMaxHp) * 100));
 
-        // Hide if full HP (not in combat)
-        if (hp >= bossMaxHp) {
+        // Hide if boss is dead or at full HP (not in combat)
+        if (hp <= 0 || hp >= bossMaxHp) {
             if (bossHpContainer) bossHpContainer.classList.remove('visible');
             return;
         }
