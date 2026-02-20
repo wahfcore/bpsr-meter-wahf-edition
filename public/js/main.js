@@ -308,16 +308,16 @@ function formatStat(value) {
 }
 
 const positionBackgroundColors = [
-    'rgba(140, 55, 65, 0.30)',
-    'rgba(130, 60, 70, 0.27)',
-    'rgba(120, 68, 76, 0.24)',
-    'rgba(110, 76, 84, 0.21)',
-    'rgba(100, 82, 90, 0.18)',
-    'rgba(90, 88, 96, 0.15)',
-    'rgba(80, 92, 102, 0.12)',
-    'rgba(70, 96, 108, 0.10)',
-    'rgba(65, 100, 112, 0.08)',
-    'rgba(60, 104, 116, 0.06)',
+    'rgba(140, 55, 65, 0.15)',
+    'rgba(130, 60, 70, 0.14)',
+    'rgba(120, 68, 76, 0.12)',
+    'rgba(110, 76, 84, 0.10)',
+    'rgba(100, 82, 90, 0.09)',
+    'rgba(90, 88, 96, 0.08)',
+    'rgba(80, 92, 102, 0.06)',
+    'rgba(70, 96, 108, 0.05)',
+    'rgba(65, 100, 112, 0.04)',
+    'rgba(60, 104, 116, 0.03)',
 ];
 
 function getPositionBackgroundColor(index) {
@@ -418,7 +418,7 @@ async function updateBossHp() {
         // Show boss HP bar
         if (bossHpContainer) bossHpContainer.classList.add('visible');
         if (bossNameEl) bossNameEl.textContent = boss.name || 'Unknown Boss';
-        if (bossHpTextEl) bossHpTextEl.textContent = `${formatStat(hp)} / ${formatStat(bossMaxHp)}`;
+        if (bossHpTextEl) bossHpTextEl.textContent = `${formatStat(hp)} / ${formatStat(bossMaxHp)} (${hpPercent.toFixed(1)}%)`;
         if (bossBarFill) {
             bossBarFill.style.width = `${hpPercent}%`;
             // Color: green > 50%, orange > 25%, red <= 25%

@@ -635,22 +635,22 @@ class PacketProcessor {
     }
 
     _processEnemyAttrs(enemyUid, attrs) {
+        let nameFromAttr = null;
+        let nameFromId = null;
+
         for (const attr of attrs) {
             if (!attr.Id || !attr.RawData) continue;
             const reader = pbjs.Reader.create(attr.RawData);
             this.logger.debug(`Found attrId ${attr.Id} for E${enemyUid} ${attr.RawData.toString('base64')}`);
             switch (attr.Id) {
                 case AttrType.AttrName:
-                    const enemyName = reader.string();
-                    this.userDataManager.enemyCache.name.set(enemyUid, enemyName);
-                    this.logger.info(`Found monster name ${enemyName} for id ${enemyUid}`);
+                    nameFromAttr = reader.string();
                     break;
                 case AttrType.AttrId:
                     const attrId = reader.int32();
                     const name = monsterNames[attrId];
                     if (name) {
-                        this.logger.info(`Found moster name ${name} for id ${enemyUid}`);
-                        this.userDataManager.enemyCache.name.set(enemyUid, name);
+                        nameFromId = name;
                     }
                     break;
                 case AttrType.AttrHp:
@@ -665,6 +665,13 @@ class PacketProcessor {
                     // this.logger.debug(`Found unknown attrId ${attr.Id} for E${enemyUid} ${attr.RawData.toString('base64')}`);
                     break;
             }
+        }
+
+        // Prefer translated name from ID table over raw AttrName (which may be Chinese)
+        const finalName = nameFromId || nameFromAttr;
+        if (finalName) {
+            this.userDataManager.enemyCache.name.set(enemyUid, finalName);
+            this.logger.info(`Found monster name ${finalName} for id ${enemyUid}`);
         }
     }
 
